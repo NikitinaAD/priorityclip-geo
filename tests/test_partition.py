@@ -1,5 +1,6 @@
 import geopandas as gpd
-from shapely.geometry import Polygon, box
+import pytest
+from shapely.geometry import MultiPolygon, Polygon, box
 
 from priorityclip.cli import main
 from priorityclip.core import partition
@@ -29,6 +30,18 @@ def test_equal_priorities_keep_input_order_and_empty_is_valid():
     assert result.report.iloc[1]["empty"]
 
 
+def test_multipolygon_and_attributes_survive_partition():
+    multi = MultiPolygon([box(0, 0, 4, 4), box(8, 0, 12, 4)])
+    source = frame([multi, box(2, 0, 10, 4)], [2, 1])
+    source["category"] = ["split", "winner"]
+    result = partition(source, "priority")
+    assert list(result.geometries["category"]) == ["winner", "split"]
+    assert result.report["removed_area_m2"].sum() == pytest.approx(16.0)
+    assert result.source_union_area == pytest.approx(result.result_union_area)
+    assert result.coverage_error_area == pytest.approx(0.0)
+    assert result.maximum_overlap_area == pytest.approx(0.0)
+
+
 def test_invalid_geometry_and_geographic_crs_are_rejected():
     bowtie = Polygon([(0, 0), (2, 2), (0, 2), (2, 0), (0, 0)])
     invalid = frame([bowtie], [1])
@@ -45,6 +58,14 @@ def test_invalid_geometry_and_geographic_crs_are_rejected():
         assert "projected" in str(exc)
 
 
+def test_missing_priority_and_empty_input_are_rejected():
+    source = frame([box(0, 0, 1, 1)], [1])
+    with pytest.raises(ValueError, match="Priority column"):
+        partition(source, "missing")
+    with pytest.raises(ValueError, match="empty"):
+        partition(source.iloc[:0], "priority")
+
+
 def test_cli_writes_geopackage_and_report(tmp_path):
     source = tmp_path / "source.gpkg"
     output = tmp_path / "output.gpkg"
@@ -52,10 +73,23 @@ def test_cli_writes_geopackage_and_report(tmp_path):
     frame([box(0, 0, 10, 10), box(5, 0, 15, 10)], [1, 2]).to_file(
         source, layer="areas", driver="GPKG", index=False
     )
-    assert main([
-        "partition", str(source), "--layer", "areas", "--priority", "priority",
-        "--output", str(output), "--report", str(report),
-    ]) == 0
+    assert (
+        main(
+            [
+                "partition",
+                str(source),
+                "--layer",
+                "areas",
+                "--priority",
+                "priority",
+                "--output",
+                str(output),
+                "--report",
+                str(report),
+            ]
+        )
+        == 0
+    )
     written = gpd.read_file(output, layer="partitioned")
     assert len(written) == 2
     assert report.read_text(encoding="utf-8").startswith("source_index,priority")

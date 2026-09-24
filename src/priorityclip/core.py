@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import math
+from dataclasses import dataclass
 
 import geopandas as gpd
 import pandas as pd
 from pyproj import CRS
-from shapely import union_all
+from shapely import difference, union, union_all
 from shapely.geometry import MultiPolygon, Polygon
 
 
@@ -71,19 +71,22 @@ def partition(
     _validate(frame, priority)
     ordered = frame.copy()
     ordered[priority] = pd.to_numeric(ordered[priority])
-    ordered["__source_order"] = range(len(ordered))
-    ordered = ordered.sort_values([priority, "__source_order"], kind="stable")
+    ordered["__priorityclip_order"] = range(len(ordered))
+    ordered = ordered.sort_values([priority, "__priorityclip_order"], kind="stable")
 
     accepted = []
     rows = []
-    occupied = Polygon()
+    claimed = None
     for source_index, row in ordered.iterrows():
         source_geometry = row.geometry
-        result_geometry = _polygonal(source_geometry.difference(occupied))
+        available = source_geometry if claimed is None else difference(source_geometry, claimed)
+        result_geometry = _polygonal(available)
         accepted.append(result_geometry)
-        occupied = union_all([occupied, result_geometry])
-        parts = 0 if result_geometry.is_empty else (
-            len(result_geometry.geoms) if isinstance(result_geometry, MultiPolygon) else 1
+        claimed = result_geometry if claimed is None else union(claimed, result_geometry)
+        parts = (
+            0
+            if result_geometry.is_empty
+            else (len(result_geometry.geoms) if isinstance(result_geometry, MultiPolygon) else 1)
         )
         rows.append(
             {
@@ -97,7 +100,7 @@ def partition(
             }
         )
 
-    output = ordered.drop(columns="__source_order").copy()
+    output = ordered.drop(columns="__priorityclip_order").copy()
     output.geometry = accepted
     report = pd.DataFrame(rows)
     source_union = union_all(list(frame.geometry))
@@ -109,9 +112,9 @@ def partition(
             overlap = max(overlap, float(left.intersection(right).area))
     allowed = tolerance if tolerance is not None else max(1e-8, float(source_union.area) * 1e-12)
     if coverage_error > allowed:
-        raise RuntimeError(f"Partition coverage invariant failed: {coverage_error} m²")
+        raise RuntimeError(f"Partition coverage invariant failed: {coverage_error} m^2")
     if overlap > allowed:
-        raise RuntimeError(f"Partition overlap invariant failed: {overlap} m²")
+        raise RuntimeError(f"Partition overlap invariant failed: {overlap} m^2")
     return PartitionResult(
         geometries=output,
         report=report,
@@ -120,4 +123,3 @@ def partition(
         coverage_error_area=coverage_error,
         maximum_overlap_area=overlap,
     )
-

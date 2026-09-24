@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import geopandas as gpd
 
+from . import __version__
 from .core import partition
 
 
@@ -14,6 +15,7 @@ def parser() -> argparse.ArgumentParser:
         prog="priorityclip",
         description="Create a deterministic, priority-respecting polygon partition.",
     )
+    root.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     commands = root.add_subparsers(dest="command", required=True)
     command = commands.add_parser("partition")
     command.add_argument("input", type=Path)
@@ -46,7 +48,7 @@ def main(argv: list[str] | None = None) -> int:
         report_tmp.replace(args.report)
         print(
             f"Partitioned {len(frame)} polygons; coverage error "
-            f"{result.coverage_error_area:.12g} m²"
+            f"{result.coverage_error_area:.12g} m^2"
         )
         return 0
     except (OSError, ValueError, RuntimeError) as exc:
@@ -56,4 +58,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

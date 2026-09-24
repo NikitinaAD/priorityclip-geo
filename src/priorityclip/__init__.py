@@ -3,5 +3,4 @@
 from .core import PartitionResult, partition
 
 __all__ = ["PartitionResult", "partition"]
-__version__ = "0.1.0"
-
+__version__ = "0.1.1"

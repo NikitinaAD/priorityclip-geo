@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "priorityclip-geo"
-version = "0.1.0"
+version = "0.1.1"
 description = "Deterministic priority-based partitioning of overlapping polygons"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -24,7 +24,12 @@ classifiers = [
 dependencies = ["geopandas>=0.14", "shapely>=2.0,<3", "pyproj>=3.6"]
 
 [project.optional-dependencies]
-test = ["pytest>=8"]
+test = ["pytest>=8", "pytest-cov>=5", "ruff>=0.8"]
+
+[project.urls]
+Homepage = "https://github.com/NikitinaAD/priorityclip-geo"
+Repository = "https://github.com/NikitinaAD/priorityclip-geo"
+Issues = "https://github.com/NikitinaAD/priorityclip-geo/issues"
 
 [project.scripts]
 priorityclip = "priorityclip.cli:main"
@@ -34,4 +39,11 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q"
+addopts = "-q --cov=priorityclip --cov-report=term-missing --cov-fail-under=85"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
