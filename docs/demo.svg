@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="260" viewBox="0 0 760 260">
+  <rect width="760" height="260" fill="#f8fafc"/>
+  <text x="145" y="35" text-anchor="middle" font-family="sans-serif" font-size="18">Input</text>
+  <rect x="55" y="65" width="170" height="140" rx="8" fill="#4f86f7" fill-opacity=".65" stroke="#2455a4" stroke-width="3"/>
+  <rect x="145" y="90" width="170" height="140" rx="8" fill="#f59e42" fill-opacity=".65" stroke="#a85b12" stroke-width="3"/>
+  <path d="M350 145h65" stroke="#334155" stroke-width="5"/>
+  <path d="M405 132l18 13-18 13" fill="none" stroke="#334155" stroke-width="5"/>
+  <text x="585" y="35" text-anchor="middle" font-family="sans-serif" font-size="18">Priority partition</text>
+  <path d="M470 65h170v25h-80v115H470z" fill="#4f86f7" fill-opacity=".8" stroke="#2455a4" stroke-width="3"/>
+  <rect x="560" y="90" width="170" height="140" rx="8" fill="#f59e42" fill-opacity=".8" stroke="#a85b12" stroke-width="3"/>
+  <text x="145" y="248" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#475569">overlap</text>
+  <text x="600" y="248" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#475569">no overlap · same union</text>
+</svg>
+
