@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import geopandas as gpd
 import pandas as pd
 from pyproj import CRS
-from shapely import difference, union, union_all
+from shapely import union_all
 from shapely.geometry import MultiPolygon, Polygon
 
 
@@ -71,18 +71,17 @@ def partition(
     _validate(frame, priority)
     ordered = frame.copy()
     ordered[priority] = pd.to_numeric(ordered[priority])
-    ordered["__priorityclip_order"] = range(len(ordered))
-    ordered = ordered.sort_values([priority, "__priorityclip_order"], kind="stable")
+    ordered["__source_order"] = range(len(ordered))
+    ordered = ordered.sort_values([priority, "__source_order"], kind="stable")
 
     accepted = []
     rows = []
-    claimed = None
+    occupied = Polygon()
     for source_index, row in ordered.iterrows():
         source_geometry = row.geometry
-        available = source_geometry if claimed is None else difference(source_geometry, claimed)
-        result_geometry = _polygonal(available)
+        result_geometry = _polygonal(source_geometry.difference(occupied))
         accepted.append(result_geometry)
-        claimed = result_geometry if claimed is None else union(claimed, result_geometry)
+        occupied = union_all([occupied, result_geometry])
         parts = (
             0
             if result_geometry.is_empty
@@ -100,7 +99,7 @@ def partition(
             }
         )
 
-    output = ordered.drop(columns="__priorityclip_order").copy()
+    output = ordered.drop(columns="__source_order").copy()
     output.geometry = accepted
     report = pd.DataFrame(rows)
     source_union = union_all(list(frame.geometry))
